@@ -1,0 +1,18 @@
+Name: zTron Demo Pipeline
+Stages:
+   - Stage:
+      - Name: Run a TSO command and simulate a failure
+      - Cmd: TSO LISTALC HISTORY MEMBERS
+      # Simulate a failing command
+      - Cmd: exit 3
+   - Stage:
+      - Name: List the log path configured in the config file
+      - Cmd: pwd
+      # Test out environment vars from config file being set properly
+      - Cmd: ls $CFG_LOG_PATH
+      - Cmd: sleep 2
+   - Stage:
+      - Name: Run some Linux/Unix commands and simulate a longer running task
+      - Cmd: df -kP
+      - Cmd: env
+      - Cmd: sleep 4
