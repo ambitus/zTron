@@ -9,6 +9,7 @@ Stages:
       - Name: List the log path configured in the config file
       - Cmd: pwd
       # Test out environment vars from config file being set properly
+      - Cmd: echo $CFG_LOG_PATH
       - Cmd: ls $CFG_LOG_PATH
       - Cmd: sleep 2
    - Stage:
