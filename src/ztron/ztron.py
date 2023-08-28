@@ -103,3 +103,12 @@ class Mcp:
         self.pipeline.cleanup()
         self.cfg.cleanup()
         self.log.cleanup()
+
+
+#
+# Mainline
+#
+def run():
+    mcp = Mcp(sys.argv)
+    mcp.run_pipeline()
+    mcp.finish()
