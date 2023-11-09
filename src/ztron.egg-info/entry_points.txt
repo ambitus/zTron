@@ -1,0 +1,2 @@
+[console_scripts]
+ztron = ztron.ztron:run
