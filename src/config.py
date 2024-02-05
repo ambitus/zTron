@@ -26,7 +26,7 @@ class Config:
 
     # File operations
     def read(self):
-        if self.file_name != None:
+        if self.file_name is not None:
             with open(self.file_name) as f:
                 cfg_list = yaml.safe_load(f)
 

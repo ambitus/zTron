@@ -1,0 +1,27 @@
+Config:
+  name: Dataset copy demo
+  userid: BOSTIAN
+  home: /u/bostian/ztron
+    - logs: logs
+  log_lvl: info
+  arg: input_ds 
+    - argv_1
+  arg: output_ds 
+    - argv_2
+  arg_list: members 
+    - argv_*
+
+Work:
+  task: append_dd
+    - SYSUT1
+    - input_ds
+  task: append_dd
+    - SYSUT2
+    - outpput_ds
+  task: create_dict
+    - 
+  task: append_dd
+    - SYSPRINT
+    - 
+
+
