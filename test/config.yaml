@@ -1,9 +1,0 @@
-# A simple configuration file to demonstrate ztron
-Name: zTron Demo Configuration
-Home: /u/bostian/ztron
-Logs: /u/bostian/ztron/logs
-Log_lvl: info
-
-CFG_ADMIN_USER: FLYNN
-CFG_ADMIN_NAME: Flynn
-CFG_LOG_PATH: /u/bostian/ztron/logs

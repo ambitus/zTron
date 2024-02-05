@@ -1,5 +1,5 @@
 """
-  pipeline.py - the zTron Pipeline class.  The pipeline is the ordered list of
+  workbook.py - the zTron Workbook class.  The workbook is the ordered list of
                 tasks to execute.
 
   Author: Joe Bostian
@@ -14,40 +14,42 @@ from IPython.core.getipython import get_ipython
 from stage import Stage
 from cmd import Cmd
 
-class Pipeline:
-    def __init__(self,log,arg_pipeline,env):
+class Workbook:
+    def __init__(self, root = None, log=None, userid=None, workbook_fn='', env=None):
+        self.root = root
         self.log = log
-        self.pln = {}
+        self.userid = userid
+        self.wrk = {}
         self.stages = []
         self.env = env
-        self.file_name = arg_pipeline
+        self.file_name = workbook_fn
         self.desc_name = ''
-
         self.read()
         return
 
-    def cleanup(self):
+    def term(self):
         return
 
     # File operations
     def read(self):
-        if self.file_name != None:
+        if self.file_name is not None:
             with open(self.file_name) as f:
-                self.pln = yaml.safe_load(f)
+                self.wrk = yaml.safe_load(f)
         return
 
-    def build_pipeline(self):
-        self.log.log('trace','--- building pipeline',None)
-        for k in self.pln:
-            self.log.log('trace','   --- pipe [%s] %s',(k,self.pln[k]))
+    def build_workbook(self):
+        self.log.log('trace', '--- building workbook', None)
+
+        for k in self.wrk:
+            self.log.log('trace','   --- pipe [%s] %s',(k,self.wrk[k]))
             if k.upper() == 'NAME':
-                self.desc_name = self.pln[k]
+                self.desc_name = self.wrk[k]
             elif k.upper() == 'STAGES':
-                self.build_stages(self.pln[k])
+                self.build_stages(self.wrk[k])
         return
 
     def build_stages(self, stgs):
-        self.log.log('trace','--- building stages',None)
+        self.log.log('trace', '--- building stages', None)
         stg_num = 1
 
         for stg_dict in stgs:
@@ -58,7 +60,7 @@ class Pipeline:
             stg_num += 1
             self.stages.append(stg)
 
-        # If this pipeline has only 1 stage, then put everything in the main
+        # If this workbook has only 1 stage, then put everything in the main
         # log file.
         if stg_num > 1:
             self.log.set_staged_log()
@@ -67,7 +69,7 @@ class Pipeline:
     def build_cells_from_stages(self):
         self.log.log('info','Building notebook cells from stages',None)
 
-        # Create a list of strings that each represent 1 stage of the pipeline.
+        # Create a list of strings that each represent 1 stage of the workbook.
         stgs_contents = []
         stg = 1
         for stage in self.stages:
@@ -88,12 +90,12 @@ class Pipeline:
         return
 
     def run(self):
-        self.log.log('info','Running pipeline %s',(self.desc_name))
+        self.log.log('info','Running workbook %s',(self.desc_name))
         start_time = time.time()
         for stage in self.stages:
             stage.run(self.env)
         elapsed_time = time.strftime("%H:%M:%S", time.gmtime(time.time()-start_time))
-        self.log.log('info','--- %s complete (%s pipeline run time)',
+        self.log.log('info','--- %s complete (%s workbook run time)',
                      (self.desc_name,elapsed_time))
 
     # Getters
@@ -105,7 +107,7 @@ class Pipeline:
 
     # Show ourselves
     def show(self):
-        self.log.log('info','-- Pipeline (%s) -------------------------',(self.desc_name))
+        self.log.log('info','-- Workbook (%s) -------------------------',(self.desc_name))
         self.log.log('info','     file name: %s',(self.file_name))
         for stage in self.stages:
             stage.show()
