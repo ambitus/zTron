@@ -162,7 +162,7 @@ def cleanup_temporaries(debugging :bool=False):
     Args:
         debugging - <bool> (optional): Debug flag. If set keep files around
         _mcs_data_set_list - <list> (implicit): Global variable that is updated
-                                                whenever a dataaet or file is created
+                                                whenever a dataset or file is created
     Return:
         None
     """

@@ -1,5 +1,4 @@
 import sys
-from . import main_cli
 from ztron import Mcp
 
 if __name__ == '__main__':

@@ -20,9 +20,9 @@ classifiers = [
     "License :: OSI Approved :: Apache 2 License",
     "Operating System :: POSIX :: Other",
 ]
-dependencies = [
-    "jupyter>=1.1.0"
-]
+# dependencies = [
+#     "jupyter>=1.1.0"
+# ]
 
 [project.urls]
 "Homepage" = "https://github.com/ambitus/zTron"
@@ -34,4 +34,4 @@ include = ["ztron"]
 namespaces = false
 
 [project.scripts]
-stockpyle = "ztron.main:main_cli"
+stockpyle = "main:main_cli"

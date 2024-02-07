@@ -29,8 +29,7 @@ class Mcp:
     # If no pipeline and configuration is provided, it can be specified
     # interactively.
     def __init__(self,args=None):
-        self.dds = {}
-        self.temps = {}
+        self.workbooks = []
         self.spool = {}
         self.cfg = None
         self.log = None
