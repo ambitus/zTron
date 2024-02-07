@@ -15,15 +15,21 @@ from stage import Stage
 from cmd import Cmd
 
 class Workbook:
-    def __init__(self, root = None, log=None, userid=None, workbook_fn='', env=None):
+    def __init__(self, userid=None, root = None, log=None, filename='', env=None):
+        self.userid = userid
         self.root = root
         self.log = log
-        self.userid = userid
-        self.wrk = {}
-        self.stages = []
+        self.log_lvl = log_lvl
+        self.filename = filename
+        self.desc = ''
+
+        # Resources allocated during workbook execution
+        self.tasks = {}
+        self.dds = {}
+        self.temps = {}
         self.env = env
-        self.file_name = workbook_fn
-        self.desc_name = ''
+
+        # Build the contents of the workbook
         self.read()
         return
 

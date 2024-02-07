@@ -5,6 +5,27 @@ configuration.  These tasks can specify the use of traditional z/OS interfaces
 like TSO, ISPF, and JCL, as well as open source interfaces based on Unix and
 Linux.  The goal is to make the framework familiar to Linux and z/OS users alike.
 
+## How To Build
+- Create a dev/test virtual environmant with:
+  - build
+  - wheel
+  - pytest  
+  These can come from pypi.
+   ```
+   python3 -m venv devenv
+   source devenv/bin/activate
+   pip install -i https://pypi.python.org/simple build wheel pytest
+   ```
+- Perform the build from devenv
+  ```
+  pip wheel -i https://pypi.python.org/simple --wheel-dir=dist .
+  ```
+
+## How to Test
+```
+pytest 2>&1 | tee test_log.txt
+```
+
 ## Minimal Footprint
 zTron is implemented in Python and shell script, and passes tasks to different
 z/OS facilities through the _**ISPF Gateway**_.  There are no other dependencies to

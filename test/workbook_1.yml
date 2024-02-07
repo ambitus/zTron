@@ -1,7 +1,7 @@
 Config:
-  name: Dataset copy demo
+  description: Dataset copy demo
   userid: BOSTIAN
-  home: /u/bostian/ztron
+  root: /u/bostian/ztron
     - logs: logs
   log_lvl: info
   arg: input_ds 
