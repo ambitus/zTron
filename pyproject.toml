@@ -34,4 +34,4 @@ include = ["ztron"]
 namespaces = false
 
 [project.scripts]
-stockpyle = "main:main_cli"
+ztron = "ztron.run:run_workbook"
