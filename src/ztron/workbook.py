@@ -12,7 +12,7 @@ import os, yaml, time
 from IPython.core.getipython import get_ipython
 
 from stage import Stage
-from cmd import Cmd
+from task import Task
 
 class Workbook:
     def __init__(self, userid=None, root = None, log=None, filename='', env=None):

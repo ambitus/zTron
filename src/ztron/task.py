@@ -1,5 +1,5 @@
 """
-  cmd.py - the zTron Cmd class.  This is the unit of work to perform for a given
+  task.py - the zTron Task class.  This is the unit of work to perform for a given
            task.  Collections of commands form a stage of a pipeline.
 
   Author: Joe Bostian
@@ -13,10 +13,10 @@ import subprocess
 
 # A wrapper class to ensure that we have proper exception handling in place when
 # running commands.
-class Cmd:
-    def __init__(self,log,cmd):
+class Task:
+    def __init__(self,log,task):
         self.log = log
-        self.cmd = cmd;
+        self.task = task;
         self.out = None
         self.err = None
         self.rc = 0;
@@ -28,7 +28,7 @@ class Cmd:
     # Run a task in the pipeline.  Peek at the task to see what kind of command
     # it is, and handle it accordingly.
     def run(self, cmd_env):
-        if self.cmd.split(' ')[0] == 'TSO':
+        if self.task.split(' ')[0] == 'TSO':
             rc = self.run_tso(cmd_env)
         else:
             rc = self.run_linux(cmd_env)
@@ -37,7 +37,7 @@ class Cmd:
     # TSO commands run through the ISPF Gateway.  This is an interactive interface,
     # so we route the command itself through STDIN
     def run_tso(self, cmd_env):
-        self.log.log('info','[TSO]> %s',self.cmd.replace('TSO ', ''))
+        self.log.log('info','[TSO]> %s',self.task.replace('TSO ', ''))
 
         # Need to run in the shell to get the env we want to set up.
         proc = subprocess.Popen(args='ISPZINT',
@@ -48,7 +48,7 @@ class Cmd:
                                 shell=True)
 
         try:
-            self.out, self.err = proc.communicate(input=bytes(self.cmd, 'utf-8'))
+            self.out, self.err = proc.communicate(input=bytes(self.task, 'utf-8'))
             self.rc = proc.returncode
 
             # The gateway is very verbose by default, but the actual output of the
@@ -86,10 +86,10 @@ class Cmd:
 
     # Vanilla Unix/Linux command, so run this through the shell.
     def run_linux(self, cmd_env):
-        self.log.log('info','[Shell]> %s',self.cmd)
+        self.log.log('info','[Shell]> %s',self.task)
 
         # Need to run in the shell to get the env we want to set up.
-        proc = subprocess.Popen(args=self.cmd,
+        proc = subprocess.Popen(args=self.task,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 env=cmd_env,
@@ -126,8 +126,8 @@ class Cmd:
         return 1
 
     def get_cmd(self):
-        return self.cmd
+        return self.task
 
     def show(self):
-        self.log.log('info', '       cmd: %s',self.cmd)
+        self.log.log('info', '       task: %s',self.task)
         return
