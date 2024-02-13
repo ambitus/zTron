@@ -1,11 +1,11 @@
 import argparse
 import yaml
-from ztron import mcp
+from ztron.mcp import Mcp
 
 
 # Input arguments to the zTron CLI
 class Job():
-    def __init__(self):
+    def __init__(self, argv=None, argc=None):
         self.jobname = ''
         self.userid = ''
         self.loglvl = False
@@ -48,8 +48,8 @@ class Job():
         print('Job config: ', self.config)
 
 
-def run():
-    job = Job()
+def run_job(argv=None, argc=None):
+    job = Job(argv, argc)
     mcp = Mcp(job)
     mcp.run()
     mcp.finish()

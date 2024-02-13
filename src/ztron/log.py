@@ -10,7 +10,7 @@
 """
 import subprocess, time, os, sys
 
-from log_file import LogFile
+from ztron.log_file import LogFile
 
 class Log:
     def __init__(self, log_name, log_path, log_level):

@@ -34,4 +34,4 @@ include = ["ztron"]
 namespaces = false
 
 [project.scripts]
-ztron = "ztron.run:run_workbook"
+ztron = "ztron.run:run_job"
