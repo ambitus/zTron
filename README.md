@@ -15,7 +15,7 @@ Linux.  The goal is to make the framework familiar to Linux and z/OS users alike
    ```
    python3 -m venv devenv
    source devenv/bin/activate
-   pip install -i https://pypi.python.org/simple build wheel pytest
+   pip install -i https://pypi.python.org/simple build wheel pytest pyyaml
    ```
 - Perform the build from devenv
   ```

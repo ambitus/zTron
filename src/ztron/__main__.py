@@ -1,5 +1,5 @@
 import sys
-from run import run_workbook
+from ztron.run import run_job
 
 if __name__ == '__main__':
-    sys.exit(run_workbook())
+    sys.exit(run_job(sys.argv, len(sys.argv)))

@@ -10,9 +10,9 @@
 import os, time
 from datetime import datetime
 
-from workbook import Workbook
-from config import Config
-from log import Log
+# from ztron.workbook import Workbook
+from ztron.config import Config
+from ztron.log import Log
 
 # Log method wrappers for easy access.  These are for application use - you won't
 # be able to import them from internal ztron code.
