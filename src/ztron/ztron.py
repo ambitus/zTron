@@ -53,13 +53,7 @@ class Mcp:
             print('Error - args must be provided for workbook, config, and log level')
             raise Exception
 
-    def run_stage(self,stg_num):
-        self.workbook.run_stage(stg_num)
-
-    def run_stages(self):
-        self.workbook.build_cells_from_stages()
-
-    def run_pipeline(self):
+    def run(self):
         self.workbook.run()
 
     def getenv(self,env_var):
@@ -95,7 +89,7 @@ class Mcp:
         self.log.log('info','Finishing up: %s',(self.workbook.get_desc_name()))
         self.log.log('info','  Complete results logged in: %s',(self.log.get_full_path()))
 
-        # Show the results of each stage executed:
+        # Show the results of each task executed:
         self.workbook.show_results()
         elapsed_time = time.strftime("%H:%M:%S", time.gmtime(time.time()-self.start_time))
         self.log.log('info','  Total elapsed time: %s',(elapsed_time))

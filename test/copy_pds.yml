@@ -1,0 +1,15 @@
+Config:
+  description: PDS member copy demo
+  userid: BOSTIAN
+  home: 
+    root: /u/bostian/ztron
+    logs: logs
+    spool: spool
+  log_lvl: verbose
+
+Args:
+  input_ds: BOSTIAN.ZTRON.TEST.PDS
+  output_ds: BOSTIAN.ZTRON.TEST.PDS.TARGET
+  members: 
+    - F1
+    - F2

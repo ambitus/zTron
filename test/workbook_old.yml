@@ -1,8 +1,10 @@
 Config:
   description: Dataset copy demo
   userid: BOSTIAN
-  root: /u/bostian/ztron
+  home: /u/bostian/ztron
     - logs: logs
+
+Args:
   log_lvl: info
   arg: input_ds 
     - argv_1
@@ -23,5 +25,3 @@ Work:
   task: append_dd
     - SYSPRINT
     - 
-
-

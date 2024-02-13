@@ -10,6 +10,7 @@ Linux.  The goal is to make the framework familiar to Linux and z/OS users alike
   - build
   - wheel
   - pytest  
+  - pyyaml
   These can come from pypi.
    ```
    python3 -m venv devenv
