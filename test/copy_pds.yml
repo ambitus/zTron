@@ -1,15 +1,19 @@
-Config:
-  description: PDS member copy demo
+Name: PDSMCopy
+Description: PDS Member Copy Demo
+
+Environment:
   userid: BOSTIAN
   home: 
-    root: /u/bostian/ztron
-    logs: logs
-    spool: spool
+    Root: /u/bostian/ztron
+    Logs: logs
+    Spool: spool
   log_lvl: verbose
 
-Args:
-  input_ds: BOSTIAN.ZTRON.TEST.PDS
-  output_ds: BOSTIAN.ZTRON.TEST.PDS.TARGET
-  members: 
-    - F1
-    - F2
+Application:
+  name: PDSMCopy_app.py
+  args:
+    Input_ds: BOSTIAN.ZTRON.TEST.PDS
+    Output_ds: BOSTIAN.ZTRON.TEST.PDS.TARGET
+    members: 
+      - F1
+      - F2
