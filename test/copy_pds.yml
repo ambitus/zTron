@@ -1,10 +1,11 @@
 Name: PDSMCopy
 Description: PDS Member Copy Demo
+Program: copy_pds.py
 
 Environment:
   userid: BOSTIAN
   home: 
-    Root: /u/bostian/ztron
+    Root: /shared/python_utilities/rebel/workspace/Gandalf/zTron/test
     Logs: logs
     Spool: spool
   log_lvl: verbose

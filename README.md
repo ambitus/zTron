@@ -64,3 +64,9 @@ usage: ztron -p <pipeline> -c <config> -l <logpath> -v <verbosity> -h
 
 If you have Jupyter available in your installation, you have
 the option of [using the Jupyter notebook interface to zTron](./using_jupyter.md)
+
+
+## Important links
+- Python modules and imports
+   - [https://docs.python.org/3/tutorial/modules.html#packages](https://docs.python.org/3/tutorial/modules.html#packages)
+

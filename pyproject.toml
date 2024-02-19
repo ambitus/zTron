@@ -30,7 +30,7 @@ classifiers = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["ztron"]
+include = ["ztron*"]
 namespaces = false
 
 [project.scripts]
