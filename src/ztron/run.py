@@ -2,6 +2,6 @@
 from ztron.job import Job
 
 def run_job(argc=0, argv=None):
-    job = Job(argv, argc)
+    job = Job(argc, argv)
     job.run()
     job.finish()

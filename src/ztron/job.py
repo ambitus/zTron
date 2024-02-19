@@ -8,6 +8,7 @@
   SPDX-License-Identifier: Apache-2.0
 """
 import os
+import subprocess
 import time
 import argparse
 import yaml
@@ -55,6 +56,7 @@ class Job():
         self.job_desc_fn = self.job_desc['filename']
         self.name = self.job_desc['name']
         self.desc = self.job_desc['description']
+        self.pgm = self.job_desc['program']
         self.env_userid = self.job_desc['environment']['userid']
         self.env_home = self.job_desc['environment']['home']['root']
         self.env_home_logs_path = self.env_home+'/'+self.job_desc['environment']['home']['logs']
@@ -68,6 +70,8 @@ class Job():
 
     def run(self):
         print(('--- Running %s ...' % (self.name)))
+        os.environ['PATH'] += ':' + self.env_home
+        subprocess.run(['python', self.env_home+'/'+self.pgm], shell=False)
         return
 
     def finish(self):
@@ -132,9 +136,9 @@ class Job():
 
         # Override job descriptor settings with command line args.
         # job_desc.update(cli_args)
-        if 'userid' in cli_args:
+        if ('userid' in cli_args) and (len(cli_args['userid']) > 0):
             jd_env['userid'] = cli_args['userid']
-        if 'log_lvl' in cli_args:
+        if ('log_lvl' in cli_args) and (len(cli_args['log_lvl']) > 0):
             jd_env['log_lvl'] = cli_args['log_lvl']
         return jd_env
 
@@ -188,6 +192,7 @@ class Job():
         print('Job:  %s' % (self.job_desc_fn))
         print('   name:  %s' % (self.name))
         print('   description:  %s' % (self.desc))
+        print('   program:  %s' % (self.pgm))
         print('   userid:  %s' % (self.env_userid))
         print('   home: %s' % (self.env_home))
         print('   logs path: %s' % (self.env_home_logs_path))
