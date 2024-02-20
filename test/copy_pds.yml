@@ -1,6 +1,5 @@
 Name: PDSMCopy
 Description: PDS Member Copy Demo
-Program: copy_pds.py
 
 Environment:
   userid: BOSTIAN
@@ -9,12 +8,15 @@ Environment:
     Logs: logs
     Spool: spool
   log_lvl: verbose
+  keep_spool: True
 
+# Input args passed directly to the zTron application,  There is no case folding or 
+# parsing performed in these args.
 Application:
-  name: PDSMCopy_app.py
+  name: copy_pds.py
   args:
-    Input_ds: BOSTIAN.ZTRON.TEST.PDS
-    Output_ds: BOSTIAN.ZTRON.TEST.PDS.TARGET
+    from_pds: BOSTIAN.ZTRON.TEST.PDS
+    to_pds: BOSTIAN.ZTRON.TEST.PDS.TARGET
     members: 
       - F1
       - F2
