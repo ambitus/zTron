@@ -7,28 +7,22 @@
 
   SPDX-License-Identifier: Apache-2.0
 """
-import os
-import subprocess
-import time
 import argparse
 import yaml
-import pprint as pp
-from datetime import datetime
 
-# from ztron.workbook import Workbook
-from ztron.config import Config
+from ztron.mvs import dataset
 from ztron.log import Log
 
 # Log method wrappers for easy access.  These are for application use - you won't
 # be able to import them from internal ztron code.
 def log_info(mcp,fmt,args=None):
-    mcp.log.log('info',fmt,args)
+    ztron.log.log('info',fmt,args)
 def log_warn(mcp,fmt,args=None):
-    mcp.log.log('warn',fmt,args)
+    ztron.log.log('warn',fmt,args)
 def log_err(mcp,fmt,args=None):
-    mcp.log.log('err',fmt,args)
+    ztron.log.log('err',fmt,args)
 def log_trc(mcp,fmt,args=None):
-    mcp.log.log('trace',fmt,args)
+    ztron.log.log('trace',fmt,args)
 
 
 class Job():
@@ -40,45 +34,43 @@ class Job():
         self.desc = ''
         self.env_userid = ''
         self.env_home = ''
-        self.env_home_logs_path = ''
+        self.env_home_log_path = ''
         self.env_home_spool_path = ''
         self.env_log_lvl = ''
+        self.env_keep_spool = True
         self.appl_name = ''
         self.appl_args = {}
 
+        # Resources allocated during the execution of a job.
+        self.DD_list = []
+        self.temp_datasets = []
+        self.temp_files = []
         self.log = None
         self.ts_start = None
 
         # Get all input from the command line and job descriptor.
-        self.job_desc = self.get_job_desc(argc, argv)
+        self.job_desc = self.parse_job_desc(argc, argv)
 
         # Build the job from the specified input.
         self.job_desc_fn = self.job_desc['filename']
         self.name = self.job_desc['name']
         self.desc = self.job_desc['description']
-        self.pgm = self.job_desc['program']
         self.env_userid = self.job_desc['environment']['userid']
         self.env_home = self.job_desc['environment']['home']['root']
-        self.env_home_logs_path = self.env_home+'/'+self.job_desc['environment']['home']['logs']
+        self.env_home_log_path = self.env_home+'/'+self.job_desc['environment']['home']['logs']
         self.env_home_spool_path = self.env_home+'/'+self.job_desc['environment']['home']['spool']
         self.env_log_lvl = self.job_desc['environment']['log_lvl']
+        self.env_keep_spool = self.job_desc['environment']['keep_spool']
         self.appl_name = self.job_desc['application']['name']
         self.appl_args = self.job_desc['application']['args']
-        self.log = Log('ztron.log', self.env_home_logs_path, self.env_log_lvl)
-        self.print()
-        return
-
-    def run(self):
-        print(('--- Running %s ...' % (self.name)))
-        os.environ['PATH'] += ':' + self.env_home
-        subprocess.run(['python', self.env_home+'/'+self.pgm], shell=False)
+        self.log = Log('ztron.log', self.env_home_log_path, self.env_log_lvl)
         return
 
     def finish(self):
-        print(('--- Clean up from %s ...' % (self.name)))
         return
 
-    def get_job_desc(self, argc, argv):
+    # Methods to acquire and process the job descriptor from input args.
+    def parse_job_desc(self, argc, argv):
         """
         Input can be provided from the command line or in the job descriptor.  Parse 
         the command line to get the name of the job descriptor file, acquire settings 
@@ -90,8 +82,6 @@ class Job():
         ap.add_argument('--userid', default=self.env_userid)
         ap.add_argument('--log_lvl', default=self.env_log_lvl)
         cli_args = ap.parse_args().__dict__
-        print('--- cli args: ')
-        pp.pprint(cli_args)
 
         if 'job' not in cli_args.keys():
             log_err('No job descriptor specified.')
@@ -99,7 +89,6 @@ class Job():
 
         # Load the job descriptor file with environment settings and application 
         # arguments.
-        print('--- job descriptor name: %s' % (cli_args['job']))
         with open(cli_args['job'], 'r') as file:
             try:
                 job_yml_dict = yaml.safe_load(file)
@@ -115,14 +104,11 @@ class Job():
             job_desc[key.lower()] = job_yml_dict[key]
 
         # Handle the environment and application sections of the descriptor.
-        job_desc.update(environment=self.get_jd_env(job_desc, cli_args))
-        job_desc.update(application=self.get_jd_appl(job_desc)) 
-
-        print('--- job descriptor after merge:')
-        pp.pprint(job_desc)
+        job_desc.update(environment=self.parse_jd_env(job_desc, cli_args))
+        job_desc.update(application=self.parse_jd_appl(job_desc)) 
         return job_desc
 
-    def get_jd_env(self, job_desc, cli_args):
+    def parse_jd_env(self, job_desc, cli_args):
         # The Environment section is required.
         if 'environment' not in job_desc.keys():
             log_err('No environment section in job descriptor.')
@@ -132,17 +118,16 @@ class Job():
         for key in job_desc['environment'].keys():
             jd_env[key.lower()] = job_desc['environment'][key]
 
-        jd_env.update(home=self.get_jd_env_home(jd_env))
+        jd_env.update(home=self.parse_jd_env_home(jd_env))
 
         # Override job descriptor settings with command line args.
-        # job_desc.update(cli_args)
         if ('userid' in cli_args) and (len(cli_args['userid']) > 0):
             jd_env['userid'] = cli_args['userid']
         if ('log_lvl' in cli_args) and (len(cli_args['log_lvl']) > 0):
             jd_env['log_lvl'] = cli_args['log_lvl']
         return jd_env
 
-    def get_jd_env_home(self, jd_env):
+    def parse_jd_env_home(self, jd_env):
         # Home is required in the environment.
         if 'home' not in jd_env.keys():
             log_err('No home section in job descriptor environment.')
@@ -158,7 +143,7 @@ class Job():
 
         return jd_env_home
 
-    def get_jd_appl(self, job_desc):
+    def parse_jd_appl(self, job_desc):
         # The Application section is required.
         if 'application' not in job_desc.keys():
             log_err('No application section in job descriptor.')
@@ -179,6 +164,32 @@ class Job():
         jd_appl['args'] = job_desc['application']['args']
         return jd_appl
 
+    # Methods for managing MVS resources.
+    def append_temp_dataset_list(self, dataset_name: str) -> None:
+        self.temp_datasets.append(dataset_name)
+        return
+
+    def create_DD(self, name: str, resource: str) -> None:
+        print('--- Creating %s for %s' % (name, resource))
+        self.DD_list.append(dataset.create_DD(name, resource))
+        return
+
+    def create_spool_DD(self) -> None:
+        print('--- Creating spool resources')
+        spool_dataset = dataset.create_temp_dataset()
+        self.temp_datasets.append(spool_dataset['name'])
+        self.create_DD('SYSPRINT', spool_dataset['name'])
+        return
+
+    def create_task_DD(self, task: str, 
+                       dd_1: str, dd_2: str, args: []) -> None:
+        print('--- Creating task DD')
+        return
+
+    # Conventional getter routines
+    def get_DD_list(self):
+        return self.DD_list
+
     def get_job_name(self):
         return self.name
 
@@ -188,92 +199,35 @@ class Job():
     def get_log_level(self):
         return self.log_lvl
 
+    def get_zargs(self):
+        '''
+        get_zargs - get zTron application arguments
+        '''
+        return self.appl_args
+
+    def show(self):
+        '''
+        show - Show a job and all of the logs for it from previous runs.
+        '''
+        self.print()
+        return
+
     def print(self):
         print('Job:  %s' % (self.job_desc_fn))
         print('   name:  %s' % (self.name))
         print('   description:  %s' % (self.desc))
-        print('   program:  %s' % (self.pgm))
         print('   userid:  %s' % (self.env_userid))
         print('   home: %s' % (self.env_home))
-        print('   logs path: %s' % (self.env_home_logs_path))
+        print('   log path: %s' % (self.env_home_log_path))
         print('   spool path: %s' % (self.env_home_spool_path))
-        print('   log level: %s\n' % (self.env_log_lvl))
-        print('   application: %s\n' % (self.appl_name))
+        print('   log level: %s' % (self.env_log_lvl))
+        print('   keep spool: ', self.env_keep_spool, '\n')
+        print('   application: %s' % (self.appl_name))
         print('   args: \n      ', self.appl_args)
+        print('Temp dataset names:')
+        for temp_ds in self.temp_datasets:
+            print('   %s' % temp_ds)
+        print('Data definitions in use:')
+        for dd in self.DD_list:
+            print('   %s' % (dd.get_mvscmd_string()))
         return
-
-
-
-class Mcp:
-    # If no workbook and configuration is provided, it can be specified
-    # interactively.
-    def __init__(self,args=None):
-        self.workbooks = []
-        self.spool = {}
-        self.cfg = None
-        self.log = None
-        self.workbook = None
-        self.start_time = time.time()
-
-        if (args != None) & (len(args) >= 4):
-            # Bootstrap situation between config and log ...
-            self.cfg = Config(args[2], args[3])
-            self.log = Log('ztrun',
-                           self.cfg.get_log_path(),
-                           self.cfg.get_log_level())
-            self.cfg.set_log(self.log)
-
-            self.workbook = Workbook(self.log,args[1],self.cfg.get_env())
-            self.workbook.build_pipeline()
-
-            self.show_env()
-        else:
-            # Log is not available
-            print('Error - args must be provided for workbook, config, and log level')
-            raise Exception
-
-    def run(self):
-        self.workbook.run()
-
-    def getenv(self,env_var):
-        try:
-            return os.environ[env_var]
-        # Swallow any exceptions because of missing env variable names.
-        except:
-            return ''
-
-    def show_env(self):
-        self.log.log('info','zTron Workbook cyborg',None)
-        now = datetime.now()
-        self.log.log('info','  Workbook name: %s',(self.workbook.get_desc_name()))
-        self.log.log('info','      %s',(self.workbook.get_file_name()))
-        self.log.log('info','  Configuration name: %s',(self.cfg.get_desc_name()))
-        self.log.log('info','      %s',(self.cfg.get_file_name()))
-        self.log.log('info','  Date, time: %s',(now.strftime("%d/%m/%Y, %H:%M:%S")))
-        self.log.log('info','  Current working dir: %s',(self.getenv('PWD')))
-        self.log.log('info','  Userid: %s',(self.getenv('USERNAME')))
-        self.log.log('info','  Shell: %s',(self.getenv('SHELL')))
-        self.log.log('info','\nReady to run workbook\n',None)
-
-    def show(self):
-        self.log.log('info','\nMCP:',None)
-        self.cfg.show()
-        self.workbook.show()
-        self.log.show()
-        self.log.log('info','\n',None)
-
-    def finish(self):
-        # Tell the user where their results are, and how long the job took to run.
-        self.log.log('info','Finishing up: %s',(self.workbook.get_desc_name()))
-        self.log.log('info','  Complete results logged in: %s',(self.log.get_full_path()))
-
-        # Show the results of each task executed:
-        self.workbook.show_results()
-        elapsed_time = time.strftime("%H:%M:%S", time.gmtime(time.time()-self.start_time))
-        self.log.log('info','  Total elapsed time: %s',(elapsed_time))
-
-        # If run from a notebook, copy it to the log for this instance.
-
-        self.workbook.cleanup()
-        self.cfg.cleanup()
-        self.log.cleanup()

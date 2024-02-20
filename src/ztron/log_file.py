@@ -14,7 +14,7 @@ LEVELS = {'trace': 1, 'info': 2, 'warn': 3, 'err': 4}
 
 class LogFile:
     def __init__(self, file_prefix, abs_log_path, log_level):
-        print('---- Creating log file %s' % (file_prefix))
+        # print('---- Creating log file %s' % (file_prefix))
         self.log_file_prefix = 'cmd_' if file_prefix == None else file_prefix
         self.log_file_name = file_prefix + '_' + time.strftime('%Y%m%d-%H%M%S') + '.log'
         self.abs_log_path = abs_log_path

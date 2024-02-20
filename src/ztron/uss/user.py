@@ -1,5 +1,6 @@
+import subprocess
 
-def get_zos_userid() -> str:
+def get_userid() -> str:
     """Get the z/OS userid from the system.
     Parameters: None
     Return:
