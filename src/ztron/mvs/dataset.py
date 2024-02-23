@@ -1,39 +1,59 @@
 from ztron.uss.user import get_userid
 
-from zoautil_py import datasets, mvscmd
+from zoautil_py import datasets as zoau_datasets
+
 from zoautil_py.ztypes import DDStatement, FileDefinition, DatasetDefinition
 
 
-def create_temp_dataset(parms: dict=None) -> dict:
-    """Create a temporary dataset.
-       Create a temporary dataset and return all the necessary info about it 
-       as a dictionary.  Keep track of the dataset to it can be cleaned up at 
-       ztron termination.
+def create_dataset(prefix: str='', parms: dict=None) -> dict:
+    """
+    Create a dataset and return the info about it as a dictionary.  
 
-    Paramters:
-        parms - (optional): All the parameters to create a dataset in ZOAU.
-    Return:
+    Params:
+        prefix: The prefix of the dataset name.
+        parms : All the parameters to pass to ZOAU to create a dataset.
+    Returns:
         attributes - A dictionary of all the attributes for the created dataset.
     """
-    if (parms is None) or ('name' not in parms) or (len(parms['name'] == 0)):
-        dataset_name = datasets.tmp_name(get_userid().upper()+'.TEMP')
+    # If a prefix is specified, use it to have ZOAU create a dataset name.  If 
+    # there is no prefix, look in the parms for a name field, and use that for
+    # the prefix.  If that isn't specified, just default to '<userid>.TEMP'.
+    if len(prefix) > 0:
+        hlq = prefix
     else:
-        # High level qualifier for zoau-generated temp names are max 17 characters.
-        if len(parms[name]) > 17:
-            raise ValueError('Dataset high level qualifier %s must be 17 characters or less' %
-                             (parms[name]))
-        dataset_name = datasets.tmp_name(parms['name'])
+        if (parms is not None) and ('name' in parms) and (len(parms['name'] > 0)):
+            hlq = parms['name'] + '.TEMP'
+        else:
+            hlq = get_userid() + '.TEMP'
+
+    # High level qualifier for zoau-generated temp names are max 17 characters.
+    if len(hlq) > 17:
+        raise ValueError(f'Dataset high level qualifier {hlq} must be 17 characters or less')
+    dataset_name = zoau_datasets.tmp_name(hlq)
 
     if parms is None:
-        dataset_object = datasets.create(dataset_name,"SEQ",)
+        dataset_object = zoau_datasets.create(dataset_name,"SEQ",)
     else:
-        dataset_object = datasets.create(dataset_name, **parms)
+        dataset_object = zoau_datasets.create(dataset_name, **parms)
     return dataset_object.to_dict()
 
-    # Remember this dataset for cleanup at termination.
-    job.append_temp_dataset_list(dataset_name)
-    return dataset_object.to_dict()
+
+def create_spool_dataset(userid):
+    if len(userid) > 0:
+        prefix = userid + '.ZTSPOOL'
+    else:
+        prefix = get_userid() + '.ZTSPOOL'
+    return create_dataset(prefix)
+
 
 
 def create_DD(name: str, resource: str) -> DDStatement:
-    return DDStatement(name, DatasetDefinition(resource['name'].upper()))
+    '''Create a Data Definition (DD)
+
+    Args:
+        name - DD name to associate with a resource
+        resource - resource to associate with a DD name
+
+    Return - a ZOAU DDStatement
+    '''
+    return DDStatement(name.upper(), DatasetDefinition(resource))

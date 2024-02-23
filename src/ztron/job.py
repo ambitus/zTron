@@ -10,7 +10,10 @@
 import argparse
 import yaml
 
+from ztron.mvs import command
 from ztron.mvs import dataset
+from ztron.uss import file
+from ztron.uss import user
 from ztron.log import Log
 
 # Log method wrappers for easy access.  These are for application use - you won't
@@ -122,9 +125,15 @@ class Job():
 
         # Override job descriptor settings with command line args.
         if ('userid' in cli_args) and (len(cli_args['userid']) > 0):
-            jd_env['userid'] = cli_args['userid']
+            jd_env['userid'] = cli_args['userid'].upp[[er()]]
         if ('log_lvl' in cli_args) and (len(cli_args['log_lvl']) > 0):
             jd_env['log_lvl'] = cli_args['log_lvl']
+
+        # Make sure there is a userid and is upper case.
+        if 'userid' in jd_env:
+            jd_env['userid'] = jd_env['userid'].upper()
+        else:
+            jd_env['userid'] = get_userid()
         return jd_env
 
     def parse_jd_env_home(self, jd_env):
@@ -164,6 +173,12 @@ class Job():
         jd_appl['args'] = job_desc['application']['args']
         return jd_appl
 
+    def run(self, cmd: str='', DD_list: list=[]) -> dict:
+        print(f'--- Running {cmd}, DDs:')
+        for dd in self.DD_list:
+            print(f'      {dd.get_mvscmd_string()}')
+        return command.run(cmd, self.DD_list)
+
     # Methods for managing MVS resources.
     def append_temp_dataset_list(self, dataset_name: str) -> None:
         self.temp_datasets.append(dataset_name)
@@ -175,15 +190,15 @@ class Job():
         return
 
     def create_spool_DD(self) -> None:
-        print('--- Creating spool resources')
-        spool_dataset = dataset.create_temp_dataset()
+        spool_dataset = dataset.create_spool_dataset(self.env_userid)
         self.temp_datasets.append(spool_dataset['name'])
         self.create_DD('SYSPRINT', spool_dataset['name'])
         return
 
-    def create_task_DD(self, task: str, 
-                       dd_1: str, dd_2: str, args: []) -> None:
-        print('--- Creating task DD')
+    def create_task_DD(self, task: list) -> None:
+        task_file = file.build_task_file(task)
+        self.temp_files.append(task_file)
+        self.create_DD('SYSIN', task_file)
         return
 
     # Conventional getter routines
@@ -199,9 +214,9 @@ class Job():
     def get_log_level(self):
         return self.log_lvl
 
-    def get_zargs(self):
+    def get_appl_args(self):
         '''
-        get_zargs - get zTron application arguments
+        get_appl_args - get zTron application arguments
         '''
         return self.appl_args
 
@@ -214,6 +229,7 @@ class Job():
 
     def print(self):
         print('Job:  %s' % (self.job_desc_fn))
+        print('Environment:')
         print('   name:  %s' % (self.name))
         print('   description:  %s' % (self.desc))
         print('   userid:  %s' % (self.env_userid))
@@ -222,12 +238,18 @@ class Job():
         print('   spool path: %s' % (self.env_home_spool_path))
         print('   log level: %s' % (self.env_log_lvl))
         print('   keep spool: ', self.env_keep_spool, '\n')
-        print('   application: %s' % (self.appl_name))
-        print('   args: \n      ', self.appl_args)
-        print('Temp dataset names:')
+        print('Application: %s' % (self.appl_name))
+        print('   args:')
+        for arg_key, arg_val in self.appl_args.items():
+            print('         %s: %s' % (arg_key, arg_val))
+        print('\nResources:')
+        print('   Temp dataset names:')
         for temp_ds in self.temp_datasets:
-            print('   %s' % temp_ds)
-        print('Data definitions in use:')
+            print('      %s' % temp_ds)
+        print('   Temp file names:')
+        for temp_file in self.temp_files:
+            print('      %s' % temp_file)
+        print('   Data definitions in use:')
         for dd in self.DD_list:
-            print('   %s' % (dd.get_mvscmd_string()))
+            print('      %s' % (dd.get_mvscmd_string()))
         return

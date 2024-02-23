@@ -1,67 +1,104 @@
+import os
+from datetime import datetime
+from ztron.uss.user import get_userid
 
-def create_unique_output_file(filename:str)->str:
-    """Create a unique ouput file based on the filename
 
-    Args:
-        filename (str): The base filename
+def create_file(name: str='', codepage=None) -> None:
+    """
+    Create an empty file.
 
+    Params:
+        name: A string containing the name of the file. 
+        codepage: Encoding of file contents.  Defaults to UTF-8.
     Returns:
-        str: a unique version of the filename
+        None
     """
-    cwd = os.getcwd()  # need explicit paths for dds
-    static_time = str(datetime.now().timestamp())
+    if len(name) == 0:
+        print('Error - please supply a name for the file to create.')
+        raise Exception
 
-    # This will hold any MVS messages
-    outfile = f"{cwd}/{filename}.{static_time}"
+    try:
+        # Create the file with the proper tag.
+        if codepage is not None:
+            f = open(name, 'x', encoding=codepage)
+        else:
+            f = open(name, 'x')
+        f.close()
 
-    return outfile
+    except Exception as e:
+        print(f'Error - failed to create {name}')
+        print(f'{e.message}')
+        print(f'{e.args}')
+    return
 
 
-def get_temp_file_name(name : str=None, working_directory : str="/tmp") -> str:
-    """Define a temporary filename to be used the filesystem
-
-    Parameters:
-        name - <str> (optional): A string containing the name of the file. 
-                                Defaults to None
-        working_directory - <str>(optional): A directory where the file can live. 
-                                            Defaults to tmp
-    Return:
-        filename - <str>: The name of the created file
+def create_temp_txt_file(prefix:str='', 
+                         qualifier:str='ZTTEMP', 
+                         working_dir:str='/tmp',
+                         codepage=None) -> str:
     """
-    # First lets make sure the name has the word TEMPORARY in it
-    if name is None:
-        name = "TEMPRARY"
+    Create a temporary file in the specified working directory.  The 
+    file will be created at this location:
+       <working_dir>/<prefix>_<qualifier>'_yyyymmdd_hhmmss.txt
+
+    Params:
+        prefix: The prefix of the file (defaults to userid).
+        qualifier: second component of the name, indicates file use (temp, 
+                   sysin, other).
+        working_dir: A directory where the file can live. 
+        codepage: Encoding of file contents.  Defaults to UTF-8.
+    Returns:
+        temp_file_path: An absolute temp file path name
+    """
+    if len(prefix) == 0:
+        if len(qualifier) == 0:
+            file_name = get_userid() + '_' + 'ZTTEMP' + '_'
+        else:
+            file_name = get_userid() + '_' + qualifier + '_'
     else:
-        name = f"{name}.TEMPRARY"
+        if len(qualifier) == 0:
+            file_name = prefix + '_' + 'ZTTEMP' + '_'
+        else:
+            file_name = prefix + '_' + qualifier + '_'
 
-    # We get a data and timestamp to ensure that the file name is unique
-    static_time = str(datetime.now().timestamp())
-    temp_file_name = f"{working_directory}/{name}.{static_time}"
+    # Create a human-readable date and time to build the rest of the file name.
+    now = datetime.now()
+    suffix = str(now.year).zfill(4)+str(now.month).zfill(2)+str(now.day).zfill(2)+'_'
+    suffix += str(now.hour).zfill(2)+str(now.minute).zfill(2)+str(now.second).zfill(2)
+    file_path = f"{working_dir}/{file_name}{suffix}.txt"
 
-    # Keep track of all the files in our global _mcs_data_set_list too
-    _mcs_data_set_list.append(temp_file_name
-                            )
-    # Now we can return the generated name
-    return temp_file_name
+    create_file(file_path, codepage)
+    print(f'--- File {file_path} created')
+    return file_path
 
 
-
-def create_input_file(input_list : list, input_file_name : str, codepage : str="cp1047"):
-    """Create the input file that will be used for an input DD. It is meant to
-       fit the 72 character limit that is in JCL card decks
-
-    Parameters:
-        input_list - <list>: List of strings containing the input
-        input_file_name - <str>: The name of the file
-        codepage - <str> (optional): The codepage to use when writing the data.
-                                     Defaults to "cp1047".
+def build_task_file(deck: list, codepage: str='cp1047') -> str:
     """
-    # (make sure it's EBCDIC and less than 72 bytes)
-    with open(input_file_name, "w", encoding=codepage) as sysin:
-        for listitem in input_list:
-            if len(listitem) > 72:
-                print("Input lines must be less than 72 chars\n")
-                print(f"{listitem} is length: {len(listitem)} and is ignored")
+    Create a file containing the text pointed to by a JCL input DD.  Each line 
+    of the file adheres to the rules of a JCL card, including leading blanks 
+    and the 72 character limit.  Since it's native z/OS that will be running
+    this job deck, the text for it has to be in EBCDIC.
 
-            else:
-                sysin.write(f"{listitem}\n")
+    Params:
+        deck - The list of strings corresponding to cards in a JCL deck.
+        codepage - The codepage to use when writing the data.  Defaults to 
+                   "cp1047".
+    """
+    task_file_name = create_temp_txt_file('', 'ZTSYSIN', '/tmp', codepage)
+
+    # Add the content of the deck to the task file.
+    try:
+        with open(task_file_name, "w", encoding=codepage) as sysin:
+            for card in deck:
+
+                if len(card) <= 72:
+                    sysin.write(f"{card}\n")
+
+                else:
+                    print("Error - Input lines must be less than 72 chars")
+                    print(f"   {card:40}... is length: {len(card)} and is ignored")
+                    
+    except:
+        os.remove(task_file_name)
+        task.file = ''
+    return task_file_name
