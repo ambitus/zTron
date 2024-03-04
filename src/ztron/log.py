@@ -12,14 +12,20 @@ import subprocess, time, os, sys
 
 from ztron.log_file import LogFile
 
+# Levels of logging output
+LOG_TYPES = ['minimal', 'verbose', 'debug']
+LOG_MINIMAL = 0
+LOG_VERBOSE = 1
+LOG_DEBUG = 2
+
 class Log:
-    def __init__(self, log_name, log_path, log_level):
+    def __init__(self, log_name, log_path, log_type):
         self.log_name = ''
         self.abs_log_path = ''
         self.main_log_file = None
         self.stage_log_file = None
         self.main_log_file_name = ''
-        self.log_level = log_level
+        self.log_level = self.get_log_level(log_type)
         self.f_staged = False
 
         # Work with the absolute path to the log directory.
@@ -83,14 +89,31 @@ class Log:
             self.main_log_file.log(level, fmt, args)
         return
 
+
     # Getters
     def get_full_path(self):
         return self.abs_log_path
 
+    def get_log_level(self, log_type=None):
+        """
+        Get the log level for the specified log type, or the current log level
+        setting if no type is provided.
+        """
+        if log_type is None:
+            return self.log_level
+        else:
+            return LOG_TYPES.index(log_type.lower())
+
+    def get_log_type(self):
+        return LOG_TYPES[self.log_level]
+
+
     # Setters
-    def set_staged_log(self):
-        self.f_staged_log = True
-        return
+    def set_log_level(self, log_type):
+        if log_type.lower() not in LOG_TYPES:
+            raise ValueError(f'Error - {log_type} is not a supported log level.')
+        return log_types.index(LOG_TYPES.lower())
+
 
     # Show ourselves
     def show(self):
