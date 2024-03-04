@@ -184,21 +184,26 @@ class Job():
         self.temp_datasets.append(dataset_name)
         return
 
-    def create_DD(self, name: str, resource: str) -> None:
+    def create_DD_dataset(self, name: str, resource: str) -> None:
         print('--- Creating %s for %s' % (name, resource))
         self.DD_list.append(dataset.create_DD(name, resource))
+        return
+
+    def create_DD_file(self, name: str, resource: str) -> None:
+        print('--- Creating %s for %s' % (name, resource))
+        self.DD_list.append(file.create_DD(name, resource))
         return
 
     def create_spool_DD(self) -> None:
         spool_dataset = dataset.create_spool_dataset(self.env_userid)
         self.temp_datasets.append(spool_dataset['name'])
-        self.create_DD('SYSPRINT', spool_dataset['name'])
+        self.create_DD_dataset('SYSPRINT', spool_dataset['name'])
         return
 
     def create_task_DD(self, task: list) -> None:
         task_file = file.build_task_file(task)
         self.temp_files.append(task_file)
-        self.create_DD('SYSIN', task_file)
+        self.create_DD_file('SYSIN', task_file)
         return
 
     # Conventional getter routines
