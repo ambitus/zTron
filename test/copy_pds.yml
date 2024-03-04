@@ -7,8 +7,8 @@ Environment:
     Root: /shared/python_utilities/rebel/workspace/Gandalf/zTron/test
     Logs: logs
     Spool: spool
-  log_lvl: verbose
-  keep_spool: True
+  # minimal | verbose | debug
+  log_type: debug
 
 # Input args passed directly to the zTron application,  There is no case folding or 
 # parsing performed in these args.
