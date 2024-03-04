@@ -6,7 +6,7 @@ import sys
 import subprocess
 from datetime import datetime
 from zoautil_py import datasets, mvscmd
-from zoautil_py.types import DDStatement, FileDefinition, DatasetDefinition
+from zoautil_py.ztypes import DDStatement, FileDefinition, DatasetDefinition
 
 _mcs_data_set_list=[]
 
@@ -146,10 +146,12 @@ def create_input_dd(input_list : list, ddname : str="SYSIN")->DDStatement:
     """
     # First we need to create the name of the temporary file
     # Use the ddname in the file
+    print('--- Input list: ', input_list)
     temporary_file_name = get_temp_file_name(ddname)
 
     # Now create the file that will hold the input
     create_input_file(input_list, temporary_file_name)
+    print(f'--- SYSIN file: {temporary_file_name}')
 
     # Now create the DD that will hold the input
 
@@ -227,7 +229,7 @@ def main():
         print(f"Command succeeded. Output can be found in: {output_dataset_dictionary['name']}")
 
     # Remove the temporary file and Dataset
-    cleanup_temporaries(False)
+    # cleanup_temporaries(False)
 
 if __name__ == "__main__":
     main()

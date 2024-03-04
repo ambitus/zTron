@@ -1,8 +1,7 @@
 from ztron.uss.user import get_userid
 
 from zoautil_py import datasets as zoau_datasets
-
-from zoautil_py.ztypes import DDStatement, FileDefinition, DatasetDefinition
+from zoautil_py.ztypes import DDStatement, DatasetDefinition
 
 
 def create_dataset(prefix: str='', parms: dict=None) -> dict:
@@ -46,14 +45,13 @@ def create_spool_dataset(userid):
     return create_dataset(prefix)
 
 
-
-def create_DD(name: str, resource: str) -> DDStatement:
-    '''Create a Data Definition (DD)
+def create_DD(name: str, dataset: str) -> DDStatement:
+    '''Create a Data Definition (DD) for a dataset
 
     Args:
-        name - DD name to associate with a resource
-        resource - resource to associate with a DD name
+        name - DD name to associate with a dataset
+        dataset - the dataset to associate with a DD name
 
     Return - a ZOAU DDStatement
     '''
-    return DDStatement(name.upper(), DatasetDefinition(resource))
+    return DDStatement(name.upper(), DatasetDefinition(dataset))

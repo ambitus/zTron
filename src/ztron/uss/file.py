@@ -1,6 +1,9 @@
 import os
 from datetime import datetime
+
 from ztron.uss.user import get_userid
+
+from zoautil_py.ztypes import DDStatement, FileDefinition
 
 
 def create_file(name: str='', codepage=None) -> None:
@@ -70,6 +73,18 @@ def create_temp_txt_file(prefix:str='',
     create_file(file_path, codepage)
     print(f'--- File {file_path} created')
     return file_path
+
+
+def create_DD(name: str, file: str) -> DDStatement:
+    '''Create a Data Definition (DD) for a USS file
+
+    Args:
+        name - DD name to associate with a file
+        file - the file to associate with a DD name
+
+    Return - a ZOAU DDStatement
+    '''
+    return DDStatement(name.upper(), FileDefinition(file))
 
 
 def build_task_file(deck: list, codepage: str='cp1047') -> str:
