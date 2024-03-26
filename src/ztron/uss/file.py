@@ -1,12 +1,13 @@
 import os
 from datetime import datetime
 
+from ztron.log import Log
 from ztron.uss.user import get_userid
 
 from zoautil_py.ztypes import DDStatement, FileDefinition
 
 
-def create_file(name: str='', codepage=None) -> None:
+def create_file(name: str='', codepage='utf-8', log:Log=None) -> None:
     """
     Create an empty file.
 
@@ -17,7 +18,7 @@ def create_file(name: str='', codepage=None) -> None:
         None
     """
     if len(name) == 0:
-        print('Error - please supply a name for the file to create.')
+        log.error('Please supply a name for the file to create.')
         raise Exception
 
     try:
@@ -29,16 +30,17 @@ def create_file(name: str='', codepage=None) -> None:
         f.close()
 
     except Exception as e:
-        print(f'Error - failed to create {name}')
-        print(f'{e.message}')
-        print(f'{e.args}')
+        log.error(f'Error - failed to create {name}')
+        log.error(f'{e.message}')
+        log.error(f'{e.args}')
     return
 
 
 def create_temp_txt_file(prefix:str='', 
                          qualifier:str='ZTTEMP', 
                          working_dir:str='/tmp',
-                         codepage=None) -> str:
+                         codepage:str='utf-8',
+                         log:Log=None) -> str:
     """
     Create a temporary file in the specified working directory.  The 
     file will be created at this location:
@@ -70,12 +72,12 @@ def create_temp_txt_file(prefix:str='',
     suffix += str(now.hour).zfill(2)+str(now.minute).zfill(2)+str(now.second).zfill(2)
     file_path = f"{working_dir}/{file_name}{suffix}.txt"
 
-    create_file(file_path, codepage)
-    print(f'--- File {file_path} created')
+    create_file(file_path, codepage, log)
+    log.debug(f'File {file_path} created')
     return file_path
 
 
-def create_DD(name: str, file: str) -> DDStatement:
+def create_DD(name: str, file: str, log:Log=None) -> DDStatement:
     '''Create a Data Definition (DD) for a USS file
 
     Args:
@@ -87,7 +89,7 @@ def create_DD(name: str, file: str) -> DDStatement:
     return DDStatement(name.upper(), FileDefinition(file))
 
 
-def build_task_file(deck: list, codepage: str='cp1047') -> str:
+def build_task_file(deck: list, codepage: str='cp1047', log:Log=None) -> str:
     """
     Create a file containing the text pointed to by a JCL input DD.  Each line 
     of the file adheres to the rules of a JCL card, including leading blanks 
@@ -99,7 +101,7 @@ def build_task_file(deck: list, codepage: str='cp1047') -> str:
         codepage - The codepage to use when writing the data.  Defaults to 
                    "cp1047".
     """
-    task_file_name = create_temp_txt_file('', 'ZTSYSIN', '/tmp', codepage)
+    task_file_name = create_temp_txt_file('', 'ZTSYSIN', '/tmp', codepage, log)
 
     # Add the content of the deck to the task file.
     try:
@@ -110,8 +112,8 @@ def build_task_file(deck: list, codepage: str='cp1047') -> str:
                     sysin.write(f"{card}\n")
 
                 else:
-                    print("Error - Input lines must be less than 72 chars")
-                    print(f"   {card:40}... is length: {len(card)} and is ignored")
+                    log.error('Input lines must be less than 72 chars')
+                    log.error(f'   {card:40}... is length: {len(card)} and is ignored')
                     
     except:
         os.remove(task_file_name)

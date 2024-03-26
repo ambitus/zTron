@@ -1,4 +1,4 @@
 __all__ = [
-    'dataset',                # MVS dataset utilities
-    'spool'                   # spool file management routines
+    'file',                   # USS file utilities
+    'user'                    # user utilities
 ]

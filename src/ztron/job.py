@@ -7,32 +7,20 @@
 
   SPDX-License-Identifier: Apache-2.0
 """
-import argparse
-import yaml
+import argparse, yaml
 
 from ztron.mvs import command
 from ztron.mvs import dataset
 from ztron.uss import file
 from ztron.uss import user
 from ztron.log import Log
-from ztron.log import LOG_MINIMAL, LOG_VERBOSE, LOG_DEBUG
-
-# Log method wrappers for easy access.  These are for application use - you won't
-# be able to import them from internal ztron code.
-def log_info(mcp,fmt,args=None):
-    ztron.log.log('info',fmt,args)
-def log_warn(mcp,fmt,args=None):
-    ztron.log.log('warn',fmt,args)
-def log_err(mcp,fmt,args=None):
-    ztron.log.log('err',fmt,args)
-def log_trc(mcp,fmt,args=None):
-    ztron.log.log('trace',fmt,args)
+from ztron.util import timestamp
 
 
 class Job():
     """
     """
-    def __init__(self, argc=0, argv=None):
+    def __init__(self, args=None):
         self.job_desc_fn = ''
         self.name = ''
         self.desc = ''
@@ -43,6 +31,7 @@ class Job():
         self.appl_name = ''
         self.appl_args = {}
 
+
         # Resources allocated during the execution of a job.
         self.DD_list = []
         self.temp_datasets = []
@@ -51,7 +40,7 @@ class Job():
         self.ts_start = None
 
         # Get all input from the command line and job descriptor.
-        self.job_desc = self.parse_job_desc(argc, argv)
+        self.job_desc = self.parse_job_desc(args)
 
         # Build the job from the specified input.
         self.job_desc_fn = self.job_desc['filename']
@@ -65,46 +54,54 @@ class Job():
         self.appl_args = self.job_desc['application']['args']
         self.log = Log('ztron.log', 
                        self.env_home_log_path, 
-                       self.job_desc['environment']['log_type'])
+                       self.job_desc['environment']['log_type'],
+                       __name__)
+        
+        self.log.info(f'--- Start of Job {self.name} - {timestamp()} ---------------------')
         return
 
 
     # Methods to acquire and process the job descriptor from input args.
-    def parse_job_desc(self, argc, argv):
+    def parse_job_desc(self, args=None):
         """
         Input can be provided from the command line or in the job descriptor.  Parse 
         the command line to get the name of the job descriptor file, acquire settings 
         from there, and then override settings with command line settings where specified.
         Return the merged settings in an input dictionary for later use.
         """
-        ap = argparse.ArgumentParser('Run a series of tasks and manage the output')
-        ap.add_argument('--job', default=self.job_desc_fn)
-        ap.add_argument('--userid', default=self.env_userid)
-        ap.add_argument('--log_type', default='minimal')
-        cli_args = ap.parse_args().__dict__
+        if args is not None:
+            input = args
 
-        if 'job' not in cli_args.keys():
-            log_err('No job descriptor specified.')
+        else:
+            ap = argparse.ArgumentParser('Run a series of tasks and manage the output')
+            ap.add_argument('--job', default=self.job_desc_fn)
+            ap.add_argument('--userid', default=self.env_userid)
+            ap.add_argument('--log_type', default='warning')
+            input = ap.parse_args().__dict__
+            input['log_type'] = input['log_type'].lower()
+
+        if 'job' not in input.keys():
+            self.log.error('No job descriptor specified.')
             raise Exception
 
         # Load the job descriptor file with environment settings and application 
         # arguments.
-        with open(cli_args['job'], 'r') as file:
+        with open(input['job'], 'r') as file:
             try:
                 job_yml_dict = yaml.safe_load(file)
             except yaml.YAMLError as e:
-                print(e)
+                self.log.error(e)
                 return None
         
         job_desc = {}
-        job_desc['filename'] = cli_args['job']
+        job_desc['filename'] = input['job']
 
         # Lower the case of all keys to be case invariant.
         for key in job_yml_dict.keys():
             job_desc[key.lower()] = job_yml_dict[key]
 
         # Handle the environment and application sections of the descriptor.
-        job_desc.update(environment=self.parse_jd_env(job_desc, cli_args))
+        job_desc.update(environment=self.parse_jd_env(job_desc, input))
         job_desc.update(application=self.parse_jd_appl(job_desc)) 
         return job_desc
 
@@ -115,9 +112,9 @@ class Job():
             log_err('No environment section in job descriptor.')
             raise Exception
 
-        print(f'job_desc:\n{job_desc}')
-        print(f'cli_args:\n{cli_args}'
-        )
+        # We can't log this because the Log object hasn't been initialized yet.
+        # print(f'job_desc:\n{job_desc}')
+        # print(f'cli_args:\n{cli_args}')
         jd_env = {}
         for key in job_desc['environment'].keys():
             jd_env[key.lower()] = job_desc['environment'][key]
@@ -141,7 +138,7 @@ class Job():
     def parse_jd_env_home(self, jd_env):
         # Home is required in the environment.
         if 'home' not in jd_env.keys():
-            log_err('No home section in job descriptor environment.')
+            self.log.error('No home section in job descriptor environment.')
             raise Exception
 
         jd_env_home = {}
@@ -149,7 +146,7 @@ class Job():
             jd_env_home[key.lower()] = jd_env['home'][key]
 
         if 'root' not in jd_env_home.keys():
-            log_err('No root path in home section of job descriptor environment.')
+            self.log.error('No root path in home section of job descriptor environment.')
             raise Exception
 
         return jd_env_home
@@ -158,15 +155,15 @@ class Job():
     def parse_jd_appl(self, job_desc):
         # The Application section is required.
         if 'application' not in job_desc.keys():
-            log_err('No application section in job descriptor.')
+            self.log.error('No application section in job descriptor.')
             raise Exception
 
         # Application name and arguments are required.
         if 'name' not in job_desc['application'].keys():
-            log_err('No application name in job descriptor.')
+            self.log.error('No application name in job descriptor.')
             raise Exception
         if 'args' not in job_desc['application'].keys():
-            log_err('No application args in job descriptor.')
+            self.log.error('No application args in job descriptor.')
             raise Exception
 
         # Args are application-defined, so don't fold the case of any keys.  Just pass
@@ -178,13 +175,14 @@ class Job():
 
 
     def run(self, cmd: str='', DD_list: list=[]) -> dict:
-        print(f'--- Running {cmd}, DDs:')
+        self.log.debug(f'Running {cmd}, DDs:')
         for dd in self.DD_list:
-            print(f'      {dd.get_mvscmd_string()}')
-        return command.run(cmd, self.DD_list)
+            self.log.debug(f'      {dd.get_mvscmd_string()}')
+        return command.run(cmd, self.DD_list, self.log)
 
 
-    def finish(self):
+    def term(self):
+        self.log.info(f'--- End of Job {self.name} - {timestamp()} ---------------------')
         return
 
 
@@ -195,14 +193,14 @@ class Job():
 
 
     def create_DD_dataset(self, name: str, resource: str) -> None:
-        print('--- Creating %s for %s' % (name, resource))
+        self.log.debug('Creating %s for %s' % (name, resource))
         self.DD_list.append(dataset.create_DD(name, resource))
         return
 
 
     def create_DD_file(self, name: str, resource: str) -> None:
-        print('--- Creating %s for %s' % (name, resource))
-        self.DD_list.append(file.create_DD(name, resource))
+        self.log.debug('Creating %s for %s' % (name, resource))
+        self.DD_list.append(file.create_DD(name, resource, self.log))
         return
 
 
@@ -214,7 +212,7 @@ class Job():
 
 
     def create_task_DD(self, task: list) -> None:
-        task_file = file.build_task_file(task)
+        task_file = file.build_task_file(task, 'cp1047', self.log)
         self.temp_files.append(task_file)
         self.create_DD_file('SYSIN', task_file)
         return
@@ -234,43 +232,44 @@ class Job():
 
 
     def get_appl_args(self):
-        '''
-        get_appl_args - get zTron application arguments
-        '''
         return self.appl_args
+
+
+    def get_spool_dataset(self):
+        return self.env_home_spool_path
 
 
     # Methods to display job
     def show(self):
-        '''
-        show - Show a job and all of the logs for it from previous runs.
-        '''
-        self.print()
+        self.log_job_desc()
+        self.log_job_resources()
         return
 
-
-    def print(self):
-        print(f'Job:  {self.job_desc_fn}')
-        print('Environment:')
-        print(f'   name:  {self.name}')
-        print(f'   description:  {self.desc}')
-        print(f'   userid:  {self.env_userid}')
-        print(f'   home: {self.env_home}')
-        print(f'   log path: {self.env_home_log_path}')
-        print(f'   spool path: {self.env_home_spool_path}')
-        print(f'   log type: {self.log.get_log_type()}')
-        print(f'Application: {self.appl_name}')
-        print('   args:')
+    def log_job_desc(self):
+        self.log.info(f'Job:  {self.job_desc_fn}')
+        self.log.info('Environment:')
+        self.log.info(f'   name:  {self.name}')
+        self.log.info(f'   description:  {self.desc}')
+        self.log.info(f'   userid:  {self.env_userid}')
+        self.log.info(f'   home: {self.env_home}')
+        self.log.info(f'   log path: {self.env_home_log_path}')
+        self.log.info(f'   spool path: {self.env_home_spool_path}')
+        self.log.loglog()
+        self.log.info(f'Application: {self.appl_name}')
+        self.log.info('   args:')
         for arg_key, arg_val in self.appl_args.items():
-            print(f'         {arg_key}: {arg_val}')
-        print('\nResources:')
-        print('   Temp dataset names:')
+            self.log.info(f'         {arg_key}: {arg_val}')
+        return
+
+    def log_job_resources(self):
+        self.log.info('\nResources:')
+        self.log.info('   Temp dataset names:')
         for temp_ds in self.temp_datasets:
-            print(f'      {temp_ds}')
-        print('   Temp file names:')
+            self.log.info(f'      {temp_ds}')
+        self.log.info('   Temp file names:')
         for temp_file in self.temp_files:
-            print(f'      {temp_file}')
-        print('   Data definitions in use:')
+            self.log.info(f'      {temp_file}')
+        self.log.info('   Data definitions in use:')
         for dd in self.DD_list:
-            print(f'      {dd.get_mvscmd_string()}')
+            self.log.info(f'      {dd.get_mvscmd_string()}')
         return
