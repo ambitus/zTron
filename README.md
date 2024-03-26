@@ -6,7 +6,7 @@ like TSO, ISPF, and JCL, as well as open source interfaces based on Unix and
 Linux.  The goal is to make the framework familiar to Linux and z/OS users alike.
 
 ## How To Build
-- Create a dev/test virtual environmant with:
+- Create a dev/test virtual environment with:
   - build
   - wheel
   - pytest  

@@ -1,6 +1,6 @@
 from ztron.uss.user import get_userid
 
-from zoautil_py import datasets as zoau_datasets
+from zoautil_py import datasets
 from zoautil_py.ztypes import DDStatement, DatasetDefinition
 
 
@@ -28,12 +28,12 @@ def create_dataset(prefix: str='', parms: dict=None) -> dict:
     # High level qualifier for zoau-generated temp names are max 17 characters.
     if len(hlq) > 17:
         raise ValueError(f'Dataset high level qualifier {hlq} must be 17 characters or less')
-    dataset_name = zoau_datasets.tmp_name(hlq)
+    dataset_name = datasets.tmp_name(hlq)
 
     if parms is None:
-        dataset_object = zoau_datasets.create(dataset_name,"SEQ",)
+        dataset_object = datasets.create(dataset_name,"SEQ",)
     else:
-        dataset_object = zoau_datasets.create(dataset_name, **parms)
+        dataset_object = datasets.create(dataset_name, **parms)
     return dataset_object.to_dict()
 
 
