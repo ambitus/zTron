@@ -1,4 +1,6 @@
 # zTron - Command Pipeline Automation for z/OS
+Minor change ...
+
 zTron is a lightweight automation and logging mechanism for z/OS that processes
 pipelines of tasks using common interfaces that require minimum installation and
 configuration.  These tasks can specify the use of traditional z/OS interfaces
